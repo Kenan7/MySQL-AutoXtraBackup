@@ -24,11 +24,13 @@ destinations_hash = {'linux':'/dev/log', 'linux2': '/dev/log', 'darwin':'/var/ru
 def address_matcher(plt):
     return destinations_hash.get(plt, ('localhost', 514))
 
-handler = logging.handlers.SysLogHandler(address=address_matcher(_platform))
-
-# Set syslog for the root logger
-logger.addHandler(handler)
-
+try:
+  handler = logging.handlers.SysLogHandler(address=address_matcher(_platform))
+  # Set syslog for the root logger
+  logger.addHandler(handler)
+  
+except FileNotFoundError:
+  print("Specified file does not exist.")
 
 def print_help(ctx, param, value):
     if value is False:
@@ -91,18 +93,20 @@ def validate_file(file):
     Check for validity of the file given in file path. If file doesn't exist or invalid
     configuration file, throw error.
     """
-    if os.path.isfile(file):
-        # filename extension should be .conf
-        pattern = re.compile(r'.*\.conf')
 
-        if pattern.match(file):
-            # Lastly the file should have all 5 required headers
-            if check_file_content(file):
-                return
-        else:
-            raise ValueError("Invalid file extension. Expecting .conf")
-    else:
-        raise FileNotFoundError("Specified file does not exist.")
+    try:
+      if os.path.isfile(file):
+          # filename extension should be .conf
+          pattern = re.compile(r'.*\.conf')
+
+          if pattern.match(file):
+              # Lastly the file should have all 5 required headers
+              if check_file_content(file):
+                  return
+          else:
+              raise ValueError("Invalid file extension. Expecting .conf")
+    except FileNotFoundError:
+      print("Specified file does not exist.")
 
 
 @click.command()
